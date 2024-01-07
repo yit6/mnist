@@ -20,19 +20,35 @@ Layer *create_layer(int inputs, int outputs) {
 	return layer;
 }
 
-float get_weight(Layer *layer, int i, int j) {
-	return layer->weights[j+layer->inputs*i];
-}
-
 float *apply_layer(float *inputs, Layer *layer) {
 	float *activations = (float *) malloc(layer->outputs*sizeof(float));
 
-	for (int i = 0; i < layer->outputs; ++i) {
-		float activation = layer->biases[i];
-		for (int j = 0; j < layer->inputs; ++j) {
-			activation += inputs[j]*get_weight(layer, i, j);
+	for (int output = 0; output < layer->outputs; ++output) {
+		float activation = layer->biases[output];
+		for (int input = 0; input < layer->inputs; ++input) {
+			activation += inputs[input]*layer->weights[input+layer->inputs*output];
 		}
-		activations[i] = activation;
+		activations[output] = activation;
 	}
 	return activations;
+}
+
+void print_layer(Layer *layer) {
+	printf("\nLayer:\n");
+	printf("%d inputs\n", layer->inputs);
+	printf("%d outputs\n", layer->outputs);
+
+	printf("\nBiases:\n");
+	for (int i = 0; i < layer->outputs; ++i)
+		printf("%f ", layer->biases[i]);
+
+	printf("\n\nWeights:\n");
+
+	for (int input = 0; input < layer->inputs; ++input) {
+		printf("Input %d: ", input);
+		for (int output = 0; output < layer->outputs; ++output) {
+			printf("%f ", layer->weights[input+layer->inputs*output]);
+		}
+		printf("\n");
+	}
 }

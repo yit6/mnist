@@ -5,7 +5,6 @@
 
 #include "main.h"
 
-void total_loss(Layer *layer);
 void train_sample(float *inputs, float *targets, Layer *layer);
 
 int main() {
@@ -25,28 +24,40 @@ int main() {
 //		printf("label: %d\n", labels[i]);
 //	}
 
-	Layer *layer = create_layer(2, 2);
-	//total_loss(layer);
-	
-	float inputs[9][2] = {
-		{ 0.1, 0.1 },
-		{ 0.1, 0.5 },
-		{ 0.1, 0.9 },
-		{ 0.5, 0.1 },
-		{ 0.5, 0.5 },
-		{ 0.5, 0.9 },
-		{ 0.9, 0.1 },
-		{ 0.9, 0.5 },
-		{ 0.9, 0.9 },
+	float inputs[4][2] = {
+		{ 0.0, 0.0 },
+		{ 0.0, 1.0 },
+		{ 1.0, 0.0 },
+		{ 1.0, 1.0 },
 	};
 
-	for (int epoch = 0; epoch < 10000; ++epoch) {
-		printf("Epoch %d:\n", epoch);
-		total_loss(layer);
-		for (int i = 0; i < 9; ++i)
-			train_sample(inputs[i], inputs[i], layer);
+	float outputs[4][1] = {
+		{ 0.0 },
+		{ 1.0 },
+		{ 1.0 },
+		{ 0.0 },
+	};
+
+	Network *net = create_network();
+
+	print_network(net);
+
+	for (int epoch = 0; epoch < 100000; ++epoch) {
+		if (epoch % 100 == 0) printf("\nEpoch %d:\n", epoch);
+		for (int i = 0; i < 4; ++i) {
+			train_network_sample(inputs[i], outputs[i], net);
+		}
+		float loss = 0;
+		for (int i = 0; i < 4; ++i) {
+			float *out = apply_network(inputs[i], net);
+			loss += mse(out, outputs[i], 1);
+			if (epoch % 100 == 0) printf("Input %f, %f, Output %f, Target: %f\n", inputs[i][0], inputs[i][1], out[0], outputs[i][0]);
+			free(out);
+		}
+		if (epoch % 100 == 0) printf("Loss: %f\n", loss);
 	}
-	total_loss(layer);
+
+	print_network(net);
 }
 
 void train_sample(float *inputs, float *targets, Layer *layer) {
@@ -77,49 +88,4 @@ void train_sample(float *inputs, float *targets, Layer *layer) {
 	for (int i = 0; i < layer->outputs; ++i) {
 		layer->biases[i] -= d_biases[i] * STEP_SIZE;
 	}
-
-	for (int i = 0; i < layer->outputs; ++i) {
-		printf("Output was %f, target is %f, delta is %f\n", outputs[i], targets[i], d_out_activations[i]);
-	}
-}
-
-void total_loss(Layer *layer) {
-	float *inputs = malloc(1*sizeof(float));
-	float *outputs;
-	float loss = 0;
-
-	inputs[0] = 0.0;
-	inputs[1] = 0.0;
-
-	outputs = apply_layer(inputs, layer);
-	activate(outputs, layer->outputs);
-	loss += mse(inputs, outputs, 2);
-	free(outputs);
-
-	inputs[0] = 0.0;
-	inputs[1] = 1.0;
-
-	outputs = apply_layer(inputs, layer);
-	activate(outputs, layer->outputs);
-	loss += mse(inputs, outputs, 2);
-	free(outputs);
-
-	inputs[0] = 1.0;
-	inputs[1] = 0.0;
-
-	outputs = apply_layer(inputs, layer);
-	activate(outputs, layer->outputs);
-	loss += mse(inputs, outputs, 2);
-	free(outputs);
-
-	inputs[0] = 1.0;
-	inputs[1] = 1.0;
-
-	outputs = apply_layer(inputs, layer);
-	activate(outputs, layer->outputs);
-	loss += mse(inputs, outputs, 2);
-	free(outputs);
-
-	printf("loss: %f\n", loss);
-	free(inputs);
 }

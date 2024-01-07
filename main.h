@@ -19,6 +19,7 @@ void activate(float *vec, int num);
 // Find the mean squared error between two lists
 float mse(float *a, float *b, int num);
 
+// Layers
 typedef struct layer {
 	int inputs;
 	int outputs;
@@ -28,3 +29,17 @@ typedef struct layer {
 
 Layer *create_layer(int inputs, int outputs);
 float *apply_layer(float *inputs, Layer *layer);
+void print_layer(Layer *layer);
+
+// Networks
+typedef struct network {
+	Layer **layers;
+	int num_layers;
+	int inputs;
+	int outputs;
+} Network;
+
+Network *create_network();
+float *apply_network(float *inputs, Network *net);
+void train_network_sample(float *inputs, float *targets, Network *net);
+void print_network(Network *net);
