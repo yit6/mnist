@@ -1,8 +1,6 @@
 #define ACTIVATION sigmoid
 #define D_ACTIVATION d_sigmoid
 
-#define STEP_SIZE 0.05
-
 // Read idx file of dimension 3 into a flat array
 unsigned char *read_idx3(char *filename);
 
@@ -12,6 +10,12 @@ unsigned char *read_idx1(char *filename);
 // Evaluate a sigmoid activiation function for a float
 float sigmoid(float x);
 float d_sigmoid(float x);
+
+float relu(float x);
+float d_relu(float x);
+
+float my_tan(float x);
+float d_tan(float x);
 
 // Activate a vector
 void activate(float *vec, int num);
@@ -28,7 +32,7 @@ typedef struct layer {
 } Layer;
 
 Layer *create_layer(int inputs, int outputs);
-float *apply_layer(float *inputs, Layer *layer);
+void apply_layer(float *inputs, float *outputs, Layer *layer);
 void print_layer(Layer *layer);
 
 // Networks
@@ -37,9 +41,13 @@ typedef struct network {
 	int num_layers;
 	int inputs;
 	int outputs;
+
+	float **activations;
+	float **unactivated;
+	float **d_activated;
 } Network;
 
 Network *create_network();
-float *apply_network(float *inputs, Network *net);
+void apply_network(float *inputs, float *outputs, Network *net);
 void train_network_sample(float *inputs, float *targets, Network *net);
 void print_network(Network *net);

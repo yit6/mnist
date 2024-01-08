@@ -11,26 +11,28 @@ Layer *create_layer(int inputs, int outputs) {
 	layer->weights = (float *) malloc(inputs*outputs*sizeof(float));
 	layer->biases = (float *) malloc(outputs*sizeof(float));
 
-	for (int i = 0; i < inputs*outputs; ++i)
+	for (int i = 0; i < inputs*outputs; ++i) {
 		layer->weights[i] = (float)rand()/(float)RAND_MAX;
+		layer->weights[i] *= 2;
+		layer->weights[i] -= 1;
+		layer->weights[i] /= inputs;
+	}
 
-	for (int i = 0; i < outputs; ++i)
+	for (int i = 0; i < outputs; ++i) {
 		layer->biases[i] = (float)rand()/(float)RAND_MAX;
+	}
 
 	return layer;
 }
 
-float *apply_layer(float *inputs, Layer *layer) {
-	float *activations = (float *) malloc(layer->outputs*sizeof(float));
-
+void apply_layer(float *inputs, float *outputs, Layer *layer) {
 	for (int output = 0; output < layer->outputs; ++output) {
 		float activation = layer->biases[output];
 		for (int input = 0; input < layer->inputs; ++input) {
 			activation += inputs[input]*layer->weights[input+layer->inputs*output];
 		}
-		activations[output] = activation;
+		outputs[output] = activation;
 	}
-	return activations;
 }
 
 void print_layer(Layer *layer) {

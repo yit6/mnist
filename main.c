@@ -5,9 +5,11 @@
 
 #include "main.h"
 
+float step_size = 0.05;
+
 void train_sample(float *inputs, float *targets, Layer *layer);
 
-int main() {
+int main(int argc, char **argv) {
 //	unsigned char *training_images = read_idx3("data/train-images-idx3-ubyte");
 //	unsigned char *labels = read_idx1("data/train-labels-idx1-ubyte");
 //	for (int i = 0; i < 10; i++) {
@@ -23,6 +25,11 @@ int main() {
 //		}
 //		printf("label: %d\n", labels[i]);
 //	}
+
+	if (argc == 2) {
+		step_size = atof(argv[1]);
+		printf("Using step size %f\n", step_size);
+	}
 
 	float inputs[4][2] = {
 		{ 0.0, 0.0 },
@@ -42,50 +49,23 @@ int main() {
 
 	print_network(net);
 
+	float *out = (float *) malloc(net->outputs*sizeof(float));
+
 	for (int epoch = 0; epoch < 100000; ++epoch) {
-		if (epoch % 100 == 0) printf("\nEpoch %d:\n", epoch);
+		//if (epoch % 100 == 0) printf("\nEpoch %d:\n", epoch);
 		for (int i = 0; i < 4; ++i) {
 			train_network_sample(inputs[i], outputs[i], net);
 		}
 		float loss = 0;
 		for (int i = 0; i < 4; ++i) {
-			float *out = apply_network(inputs[i], net);
+			apply_network(inputs[i], out, net);
 			loss += mse(out, outputs[i], 1);
 			if (epoch % 100 == 0) printf("Input %f, %f, Output %f, Target: %f\n", inputs[i][0], inputs[i][1], out[0], outputs[i][0]);
-			free(out);
 		}
-		if (epoch % 100 == 0) printf("Loss: %f\n", loss);
+		if (epoch % 100 == 0) {
+			printf("%d, %f\n", epoch, loss);
+		}
 	}
 
 	print_network(net);
-}
-
-void train_sample(float *inputs, float *targets, Layer *layer) {
-	float *outputs = apply_layer(inputs, layer);
-	activate(outputs, layer->outputs);
-	float *d_out_activations = (float *) malloc(layer->outputs*sizeof(float));
-
-	for (int i = 0; i < layer->outputs; ++i) {
-		d_out_activations[i] = 2*(outputs[i]-targets[i]);
-	}
-
-	float *d_weights = (float *) malloc(layer->inputs*layer->outputs);
-	float *d_biases = (float *) malloc(layer->outputs);
-
-	for (int i = 0; i < layer->outputs; ++i) {
-		for (int j = 0; j < layer->inputs; ++j) {
-			d_weights[j+layer->inputs*i] = d_out_activations[i]*D_ACTIVATION(outputs[i])*inputs[j];
-		}
-	}
-
-	for (int i = 0; i < layer->outputs; ++i) {
-		d_biases[i] = d_out_activations[i]*D_ACTIVATION(outputs[i]);
-	}
-
-	for (int i = 0; i < layer->outputs*layer->inputs; ++i) {
-		layer->weights[i] -= d_weights[i] * STEP_SIZE;
-	}
-	for (int i = 0; i < layer->outputs; ++i) {
-		layer->biases[i] -= d_biases[i] * STEP_SIZE;
-	}
 }
