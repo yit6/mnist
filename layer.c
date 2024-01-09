@@ -10,6 +10,7 @@ Layer *create_layer(int inputs, int outputs) {
 	layer->outputs = outputs;
 	layer->weights = (float *) malloc(inputs*outputs*sizeof(float));
 	layer->biases = (float *) malloc(outputs*sizeof(float));
+	layer->activation = RELU;
 
 	for (int i = 0; i < inputs*outputs; ++i) {
 		layer->weights[i] = (float)rand()/(float)RAND_MAX;

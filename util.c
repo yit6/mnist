@@ -2,6 +2,14 @@
 #include <stdio.h>
 #include "main.h"
 
+float clamp(float x, float lower, float upper) {
+	if (x < lower)
+		return lower;
+	if (x > upper)
+		return upper;
+	return x;
+}
+
 float sigmoid(float x) {
 	return 1/(1+exp(-x));
 }
@@ -34,8 +42,18 @@ float mse(float *a, float *b, int num) {
 	return err/num;
 }
 
-void activate(float *vec, int num) {
+void activate(float *vec, int num, Activation activation) {
 	for (int i = 0; i < num; ++i) {
-		vec[i] = ACTIVATION(vec[i]);
+		switch (activation) {
+			case RELU:
+				vec[i] = relu(vec[i]);
+				break;
+			case SIGMOID:
+				vec[i] = sigmoid(vec[i]);
+				break;
+			case TANGENT:
+				vec[i] = my_tan(vec[i]);
+				break;
+		}
 	}
 }

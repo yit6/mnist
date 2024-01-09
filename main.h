@@ -1,5 +1,5 @@
-#define ACTIVATION sigmoid
-#define D_ACTIVATION d_sigmoid
+#define ACTIVATION my_tan
+#define D_ACTIVATION d_tan
 
 // Read idx file of dimension 3 into a flat array
 unsigned char *read_idx3(char *filename);
@@ -17,11 +17,20 @@ float d_relu(float x);
 float my_tan(float x);
 float d_tan(float x);
 
-// Activate a vector
-void activate(float *vec, int num);
-
 // Find the mean squared error between two lists
 float mse(float *a, float *b, int num);
+
+// Clamp float between two values
+float clamp(float x, float a, float b);
+
+typedef enum activation {
+	SIGMOID,
+	TANGENT,
+	RELU,
+} Activation;
+
+// Activate a vector
+void activate(float *vec, int num, Activation activation);
 
 // Layers
 typedef struct layer {
@@ -29,6 +38,7 @@ typedef struct layer {
 	int outputs;
 	float *weights;
 	float *biases;
+	Activation activation;
 } Layer;
 
 Layer *create_layer(int inputs, int outputs);

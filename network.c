@@ -8,13 +8,16 @@ extern float step_size;
 Network *create_network() {
 	Network *net = (Network *) malloc(sizeof(Network));
 
-	net->inputs = 2;
-	net->outputs = 1;
-	net->num_layers = 2;
+	net->inputs = 28*28;
+	net->outputs = 10;
+	net->num_layers = 3;
 
 	net->layers = (Layer **) malloc(net->num_layers*sizeof(Layer));
-	net->layers[0] = create_layer(2, 2);
-	net->layers[1] = create_layer(2, 1);
+	net->layers[0] = create_layer(28*28, 128);
+	net->layers[1] = create_layer(128, 64);
+	net->layers[2] = create_layer(64, 10);
+
+	net->layers[2]->activation = TANGENT;
 
 	net->activations = (float **) malloc((net->num_layers+1)*sizeof(float *));
 	net->unactivated = (float **) malloc((net->num_layers+1)*sizeof(float *));
@@ -38,7 +41,7 @@ void apply_network(float *inputs, float *outputs, Network *net) {
 	}
 	for (int i = 0; i < net->num_layers; ++i) {
 		apply_layer(net->activations[i], net->activations[i+1], net->layers[i]);
-		activate(net->activations[i+1], net->layers[i]->outputs);
+		activate(net->activations[i+1], net->layers[i]->outputs, net->layers[i]->activation);
 	}
 	for (int i = 0; i < net->outputs; ++i) {
 		outputs[i] = net->activations[net->num_layers][i];
@@ -59,7 +62,7 @@ void train_network_sample(float *inputs, float *targets, Network *net) {
 		apply_layer(activations[i], unactivated[i+1], net->layers[i]);
 		for (int output = 0; output < net->layers[i]->outputs; ++output)
 			activations[i+1][output] = unactivated[i+1][output];
-		activate(activations[i+1], net->layers[i]->outputs);
+		activate(activations[i+1], net->layers[i]->outputs, net->layers[i]->activation);
 	}
 
 	float **d_activations = net->d_activated;
@@ -76,12 +79,36 @@ void train_network_sample(float *inputs, float *targets, Network *net) {
 		for (int input = 0; input < layer->inputs; ++input) {
 			d_activations[l][input] = 0;
 			for (int output = 0; output < layer->outputs; ++output) {
-				d_activations[l][input] += D_ACTIVATION(unactivated[l+1][output])*layer->weights[input+layer->inputs*output]*d_activations[l+1][output];
+				float (*d_activation)(float);
+				switch (layer->activation) {
+					case SIGMOID:
+						d_activation = &d_sigmoid;
+						break;
+					case RELU:
+						d_activation = &d_relu;
+						break;
+					case TANGENT:
+						d_activation = &d_tan;
+						break;
+				}
+				d_activations[l][input] += d_activation(unactivated[l+1][output])*layer->weights[input+layer->inputs*output]*d_activations[l+1][output];
 			}
 		}
 
 		for (int output = 0; output < layer->outputs; ++output) {
-			float d_b = d_activations[l+1][output]*D_ACTIVATION(unactivated[l+1][output]);
+			float (*d_activation)(float);
+			switch (layer->activation) {
+				case SIGMOID:
+					d_activation = &d_sigmoid;
+					break;
+				case RELU:
+					d_activation = &d_relu;
+					break;
+				case TANGENT:
+					d_activation = &d_tan;
+					break;
+			}
+			float d_b = d_activations[l+1][output]*d_activation(unactivated[l+1][output]);
 			layer->biases[output] -= d_b*step_size;
 
 			for (int input = 0; input < layer->inputs; ++input) {
