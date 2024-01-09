@@ -5,7 +5,7 @@
 
 #include "main.h"
 
-float step_size = 0.05;
+float step_size = 0.005;
 
 void show_sample(float *input, float *target, Network *net);
 void testing_accuracy(Network *net);
@@ -37,38 +37,40 @@ int main(int argc, char **argv) {
 		testing_outputs[i][testing_labels[i]] = 1;
 	}
 
+	Network *net;
 	if (argc == 2) {
-		step_size = atof(argv[1]);
-		printf("Using step size %f\n", step_size);
+		FILE *fp = fopen(argv[1], "r");
+		if (!fp) {
+			printf("Failed to open file\n");
+			exit(EXIT_FAILURE);
+		}
+		net = load_network(fp);
+	} else {
+		net = create_network();
 	}
-
-	Network *net = create_network();
-
-	for (int i = 0; i < 10; ++i)
-		show_sample(training_inputs[i], training_outputs[i], net);
 
 	float *out = (float *) malloc(net->outputs*sizeof(float));
 
-	for (int epoch = 0; epoch < 100; ++epoch) {
+	for (int epoch = 0; epoch < 10; ++epoch) {
 		printf("\nEpoch %d:\n", epoch);
 		for (int i = 0; i < 60000; ++i) {
 			if (i % 600 == 0) { putchar('.'); fflush(stdout); }
 			train_network_sample(training_inputs[i], training_outputs[i], net);
 		}
-		printf("\nCalculating loss\n");
-		float loss = 0;
-		for (int i = 0; i < 60000; ++i) {
-			apply_network(training_inputs[i], out, net);
-			loss += mse(out, training_outputs[i], 1);
-			//if (epoch % 100 == 0) printf("Input %f, %f, Output %f, Target: %f\n", [i][0], inputs[i][1], out[0], outputs[i][0]);
-		}
-		printf("%d, %f\n", epoch, loss);
+
+		FILE *fp = fopen("checkpoint", "w");
+		save_network(net, fp);
+		fclose(fp);
 	}
+	printf("\nCalculating loss\n");
+	float loss = 0;
+	for (int i = 0; i < 60000; ++i) {
+		apply_network(training_inputs[i], out, net);
+		loss += mse(out, training_outputs[i], net->outputs);
+	}
+	printf("Training loss: %f\n", loss/60000);
 
 	testing_accuracy(net);
-
-	for (int i = 0; i < 10; ++i)
-		show_sample(training_inputs[i], training_outputs[i], net);
 }
 
 void show_sample(float *input, float *target, Network *net) {
@@ -101,9 +103,11 @@ void show_sample(float *input, float *target, Network *net) {
 
 void testing_accuracy(Network *net) {
 	int num_correct = 0;
+	float loss = 0;
 	float *out = (float *) malloc(10*sizeof(float));
 	for (int i = 0; i < 10000; ++i) {
 		apply_network(testing_inputs[i], out, net);
+		loss += mse(out, testing_outputs[i], net->outputs);
 		int max_idx = -1, label = -1;
 		float max_val = -1.0;
 		for (int j = 0; j < 10; ++j) {
@@ -117,8 +121,7 @@ void testing_accuracy(Network *net) {
 		}
 		if (label == max_idx)
 			++num_correct;
-		else
-			show_sample(testing_inputs[i], testing_outputs[i], net);
 	}
-	printf("%d out of 10000\n", num_correct);
+	printf("Testing loss: %f\n", loss/10000);
+	printf("%2.2f on correct on testing data\n", ((float) num_correct)/100);
 }

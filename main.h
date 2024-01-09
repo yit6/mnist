@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define ACTIVATION my_tan
 #define D_ACTIVATION d_tan
 
@@ -61,3 +63,5 @@ Network *create_network();
 void apply_network(float *inputs, float *outputs, Network *net);
 void train_network_sample(float *inputs, float *targets, Network *net);
 void print_network(Network *net);
+void save_network(Network *net, FILE *fp);
+Network *load_network(FILE *fp);
